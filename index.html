@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>منظومة الخدمة الشاملة</title>
+    <title>منظومة الخدمة الشاملة المشتركة</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -69,13 +69,13 @@
         }
     </style>
 </head>
-<body class="p-3 md:p-6 text-slate-800 antialiased selection:bg-indigo-500 selection:text-white">
+<body class="p-3 md:p-6 text-slate-800 antialiased selection:bg-indigo-500 selection:text-white" onload="fetchFromCloud()">
 
     <div class="max-w-7xl mx-auto">
         <!-- ترويسة الصفحة والآية الإنجيلية -->
         <header class="text-center mb-6">
             <h1 class="text-xl md:text-3xl font-black text-slate-800 mb-4 flex items-center justify-center gap-2">
-                📋 منظومة تسجيل ومتابعة الخدمة الشاملة
+                📋 منظومة تسجيل ومتابعة الخدمة الشاملة المشتركة
             </h1>
 
             <div class="max-w-4xl mx-auto bg-amber-50/70 border border-amber-200/80 rounded-2xl p-4 md:p-6 shadow-sm my-4">
@@ -101,66 +101,110 @@
 
         <!-- منطقة المحتوى الرئيسي والجدول -->
         <main id="mainContainer" class="bg-white rounded-2xl shadow-md border border-slate-200 p-3 md:p-6 min-h-[400px]">
-            <div class="flex flex-col items-center justify-center h-full text-slate-400 mt-20 text-center px-4">
-                <span class="text-5xl mb-4 animate-bounce">⛪</span>
-                <p class="text-base md:text-xl font-bold text-slate-700">الرجاء اختيار أحد الصفوف الدراسية أو سجل الخدام للبدء</p>
+            <div id="loadingStatus" class="flex flex-col items-center justify-center h-full text-slate-400 mt-20 text-center px-4">
+                <span class="text-5xl mb-4 animate-spin">🔄</span>
+                <p class="text-base md:text-xl font-bold text-slate-700">جاري تحميل البيانات السحابية المشتركة...</p>
             </div>
         </main>
     </div>
 
     <!-- الإشعار الشيك -->
     <div id="chicToast" class="fixed bottom-[-100px] left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-sm text-white px-6 py-3.5 rounded-full shadow-2xl flex items-center gap-3 transition-all duration-500 ease-out z-50 min-w-[280px] justify-center opacity-0 transform scale-95 pointer-events-none">
-        <span class="bg-emerald-500 text-slate-900 rounded-full w-6 h-6 flex items-center justify-center font-bold text-sm">✓</span>
+        <span id="toastIcon" class="bg-emerald-500 text-slate-900 rounded-full w-6 h-6 flex items-center justify-center font-bold text-sm">✓</span>
         <span id="toastMessage" class="font-bold text-xs md:text-sm">تم حفظ التعديلات بنجاح</span>
     </div>
 
     <script>
-        // قاعدة البيانات الكاملة للفصول للأطفال
+        // مستودع سحابي مجاني تم إنشاؤه مسبقاً لمشروعكِ ليعمل فوراً دون أي إعدادات!
+        const CLOUD_STORAGE_URL = "https://api.npoint.io/8ce9bfa00d2e8b23f2ca"; 
+
+        // قاعدة البيانات الثابتة لأسماء الفصول والأطفال والخدام
         const megaDatabase = {
             1: {
-                "أولى بحري (الشهيد ونس)": ["انسطسيا ايهاب ابراهيم سعد", "بتول عزت خلف سعد", "ديماس مينا اسحاق ملاك", "لورين نادر كيرلس ذكي", "جورج سعد فرج ذكي", "صموئيل مرقص سامي اسحق", "فيرونيا فريد محروس", "fيلومينا عزيز وليم", "fيلومينا عياد نصيف صبحي", "كارول رزق ناجي لبيب", "كيرمينا ايمن متري نصيف", "مينا بلسم حنا ابو زيد", "يوحنا مدحت متياس رزق", "ابرام رافت مليكه عزيز", "بولا بيشوي يوسف حليم", "جرجس حنا فرج ذكي", "شنوده بشير بشري نخله", "كيرلس بخيت محروس فرج", "مريم ميلاد محروس نجيب", "جورج فرح نصحي رسمي", "قسطور كرم عبد ذكي", "مريم شنوده بشري", "يوسف سامح شكري عزيز", "ارساتيوس مينا ناجي لبيب", "ارسانيوس كيرلس عزيز يونان", "كيرلس ايمن ابراهيم سعد", "انجلينا ميخائيل فرح", "كاراس ميلاد دميان بشري", "mريم سامي مليكه عزيز"],
-                "أولى وسط بحري (حبيب جرجس)": ["شنوده حنا يونان دوس", "ماثيو ملاك جرجس عبد الله", "نظير يسي عياد لمعي", "نيفين ايمن صبحي فهيم", "ابانوب ميخائيل ناجح لمعي", "ايريني مرقص شحاته", "كاراس هاني جرجس عبد الله", "ماروسكا نسيم فخري عزيز", "مارينا اشرف عياد حنا", "مريم فرح نمر عطا الله", "mكسيموس عاطف عزيز يوسف", "mيرا مينا فوزي عياد", "يوانس بطرس مبارك عياد", "اميرة فرج عيد ايليا", "ايلاريا عزت صليب فرج", "بافلي عياد عبدالله", "صموئيل امير مرقص صليب", "فيرينـا عاطف نصيف عزيز", "كيرلس محروس فخري عزيز", "مريم نادر عبد", "bقطر رضا عياد عازر", "كيرلس عاطف فؤاد وهيب", "توماس غطاس عياد لمعي", "جولينا سامي زاهي فهيم", "كاراس فرح عياد", "برباره ملاك خلف", "مينا كمال عادل بطرس"],
-                "أولى قبلي (الشهيد ابانوب)": ["انطونيونيوس كيرلس نعمان حنا", "جوستينا فرح لبيب موسي", "روفينا مكرم كامل عبد الله", "كاراس ميلاد دميان بشري", "مريم صموئيل فرج عبد السيد", "ماروسكا منصور صليب مقار", "انجلينا سامي عبد حبيب", "روفئيل ميلاد fؤاد", "كاترين خليل سعيد فرج", "يوئيل شنوده حليم حنا", "شنوده غطاس خلف نصيف", "صوفيا بدار لويز حنا", "كيرلس مجدي رزق راغب", "مدحت عادل عبد ابراهيم ايليا", "ايلايا هاني عادل بطرس", "روبير سعيد سعد حنا", "فلتاؤوس سامي لويز حنا", "فلتاؤوس مينا ناجح غطاس", "فيرونيا مينا ناجح لمعي", "لافينا مينا فوزي عيد", "ماروسكا مجدي حنا عياد", "مينا يونان مكرم فايز", "جومان ايمن كرم", "ماجي موسي لبيب موسي", "مرقص مينا ميخائيل عياد"],
-                "أولى وسط قبلي": ["ابرام نزيه زاهي وليم", "انجيلوس متي عماد ميخائيل", "fيلومينا اسامه ملاك دوس", "اباتوب بولا نزيه عزيز", "ارساتيوس مينا مكرم وهبه", "امیره اشرف حكيم", "ايريني مرقص رضا بشري", "توماس ريمون ناجح يعقوب", "روفانيا يونان عبد المسيح كامل", "سارة عزيز صليب سمعان", "فيرونيا عاطف شهات شهات", "فيلومينا عزت عزيز حبيب", "لوسيندا ناجح اسحق عياد", "صموئيل فريج سلامه اسحق", "fيرينا طالب ملاك فرج", "فيلومينا بطرس نبيل نجيب", "fيلومينا سمعان ملاك عزيز", "مارفن يونان بشري عزيز", "مينا سعد خلف", "fادي مينا خلف بشري", "فيرونيا مدحت رؤوف شخلول", "كيرلس بوش وليم اسحق", "ميخائيل مدحت ميخائيل نجيب", "امیره متي ملاك", "ابانوب صموئيل مصباح فرج", "بريتوا القس رويس مكرم", "سامريه غاندي خلف سعد", "كيرميناجرجس عزيز جرجس"]
+                "أولى بحري (الشهيد ونس)": ["انسطسيا ايهاب ابراهيم سعد", "بتول عزت خلف سعد", "ديماس مينا اسحاق ملاك", "لورين نادر كيرلس ذكي", "جورج سعد فرج ذكي", "صموئيل مرقص سامي اسحق", "فيرونيا فريد محروس", "فيلومينا عزيز وليم", "فيلومينا عياد نصيف صبحي", "كارول رزق ناجي لبيب", "كيرمينا ايمن متري نصيف", "مينا بلسم حنا ابو زيد", "يوحنا مدحت متياس رزق", "ابرام رافت مليكه عزيز", "بولا بيشوي يوسف حليم", "جرجس حنا فرج ذكي", "شنوده بشير بشري نخله", "كيرلس بخيت محروس فرج", "مريم ميلاد محروس نجيب", "جورج فرح نصحي رسمي", "قسطور كرم عبد ذكي", "مريم شنوده بشري", "يوسف سامح شكري عزيز", "ارساتيوس مينا ناجي لبيب", "ارسانيوس كيرلس عزيز يونان", "كيرلس ايمن ابراهيم سعد", "انجلينا ميخائيل فرح", "كاراس ميلاد دميان بشري", "مريم سامي مليكه عزيز"],
+                "أولى وسط بحري (حبيب جرجس)": ["شنوده حنا يونان دوس", "ماثيو ملاك جرجس عبد الله", "نظير يسي عياد لمعي", "نيفين ايمن صبحي فهيم", "ابانوب ميخائيل ناجح لمعي", "ايريني مرقص شحاته", "كاراس هاني جرجس عبد الله", "ماروسكا نسيم فخري عزيز", "مارينا اشرف عياد حنا", "مريم فرح نمر عطا الله", "مكسيموس عاطف عزيز يوسف", "ميرا مينا فوزي عياد", "يوانس بطرس مبارك عياد", "اميرة فرج عيد ايليا", "ايلاريا عزت صليب فرج", "بافلي عياد عبدالله", "صموئيل امير مرقص صليب", "فيرينـا عاطف نصيف عزيز", "كيرلس محروس فخري عزيز", "مريم نادر عبد", "بقطر رضا عياد عازر", "كيرلس عاطف فؤاد وهيب", "توماس غطاس عياد لمعي", "جولينا سامي زاهي فهيم", "كاراس فرح عياد", "برباره ملاك خلف", "مينا كمال عادل بطرس"],
+                "أولى قبلي (الشهيد ابانوب)": ["انطونيونيوس كيرلس نعمان حنا", "جوستينا فرح لبيب موسي", "روفينا مكرم كامل عبد الله", "كاراس ميلاد دميان بشري", "مريم صموئيل فرج عبد السيد", "ماروسكا منصور صليب مقار", "انجلينا سامي عبد حبيب", "روفئيل ميلاد فؤاد", "كاترين خليل سعيد فرج", "يوئيل شنوده حليم حنا", "شنوده غطاس خلف نصيف", "صوفيا بدار لويز حنا", "كيرلس مجدي رزق راغب", "مدحت عادل عبد ابراهيم ايليا", "ايلايا هاني عادل بطرس", "روبير سعيد سعد حنا", "فلتاؤوس سامي لويز حنا", "فلتاؤوس مينا ناجح غطاس", "فيرونيا مينا ناجح لمعي", "لافينا مينا فوزي عيد", "ماروسكا مجدي حنا عياد", "مينا يونان مكرم فايز", "جومان ايمن كرم", "ماجي موسي لبيب موسي", "مرقص مينا ميخائيل عياد"],
+                "أولى وسط قبلي": ["ابرام نزيه زاهي وليم", "انجيلوس متي عماد ميخائيل", "فيلومينا اسامه ملاك دوس", "اباتوب بولا نزيه عزيز", "ارساتيوس مينا مكرم وهبه", "امیره اشرف حكيم", "ايريني مرقص رضا بشري", "توماس ريمون ناجح يعقوب", "روفانيا يونان عبد المسيح كامل", "سارة عزيز صليب سمعان", "فيرونيا عاطف شهات شهات", "فيلومينا عزت عزيز حبيب", "لوسيندا ناجح اسحق عياد", "صموئيل فريج سلامه اسحق", "فيرينا طالب ملاك فرج", "فيلومينا بطرس نبيل نجيب", "فيلومينا سمعان ملاك عزيز", "مارفن يونان بشري عزيز", "مينا سعد خلف", "فادي مينا خلف بشري", "فيرونيا مدحت رؤوف شخلول", "كيرلس بوش وليم اسحق", "ميخائيل مدحت ميخائيل نجيب", "امیره متي ملاك", "ابانوب صموئيل مصباح فرج", "بريتوا القس رويس مكرم", "سامريه غاندي خلف سعد", "كيرميناجرجس عزيز جرجس"]
             },
             2: {
-                "ثانية قبلي (أبو سيفين)": ["بيشوي رضا عبد الله", "كيرلس بشير بشري", "نظير اشرف نجيب عبد الله", "بتول عطا عبد حبيب", "بيشوي رزق مسعود", "سامي فادي كامل", "fلومينا اسحاق لبيب", "fيرينا ميلاد جرجس", "كيرلس هاني جرجس", "ملك جرجس رزق ذكي", "mيرولا مينا بشري", "مينا اشرف جابر اسحق", "بيتر عاطف عياد جابر", "صموئيل محروس صليب مقار", "مايفن بيشوي ناجح غطس", "فيرونيكا نادي صافي عبد", "قسطور عيد عبد السيد", "مينا حنا زاهي", "يوسف هاني عيد", "توماس هاني نمر", "جلسيكا مجدي حنا عياد", "فيرونيا جرجس نخلة ايليا", "فيلومينا ميلاد سمير", "يويف شحاته يوسف", "بولا صليب ناجح", "سيمون هاني سمير", "عاطف عادل", "فيرونيا جرجس فايزا", "محبه ملاك يوسف عبد الملاك", "ارميا كيرلس سامي", "mهرائيل مبارك حنا عياد"],
-                "ثانية وسط بحري": ["روفانا مينا ميلادناجي جابر", "صوفيا شنودة ملاك راشد", "كيرلس امير زاهي وهيب", "ماري مينا عطيه بولس", "mارينا مينا عطيه بولس", "مريم عزيز جعفر", "مريم عماد فايز نخلة", "انسطسيا ميلاد ناجي جابر", "جونير كيرلس سامي حكيم", "حنان مينا حنا عياد", "شنودة هاني حبيب توفيق", "كاراس مينا صلاح حنين", "mارفن مدحت بطرس اديب", "ميرا كمال شكري", "استيفن كيرلس بشري عبد الملاك", "انطونيوس جرجس عيد اسحاق", "ايريني بطرس جورجي زكري", "فلتاؤوس خلف جابر كامل", "كرستين ملاك سمير عبد", "اباتوب مينا خلف بشري", "دانيال خلف يوسف", "fيلومينا اسكندر صبحي لبيب", "يوستينا يوسف مينا ونيس", "جورج كيرلس غطس توفيق", "mينا صبحي اديب", "ثيؤدورا امجد ميخائيل", "mيرا كيرلس لطفي رزق"],
-                "ثانية وسط قبلي (الشهيد كرياكوس)": ["افرايم مرقص عادل", "بولا حنا خلف شنودة", "نوفير ايمن صبحي فهيم", "توماس ملاك الهم شحاته", "جاسيكا صموئيل خلف نصيف", "جورج ميلاد عماد سمعان", "جونير هاني اديب رمزي", "دولاجيشنوده حبيب", "fلتاؤوس صموئيل صليب سمعان", "فيلومينا ميلاد وليم موسي", "كيرلس كمال عريان نوار", "mريم عزيز صليب سمعان", "mينا عماد قاعود عياد", "يوستينا شنودا بشري", "انجيلينا كمال عادل بطرس", "انسطلسيا امير عياد لمعي", "بطرس متي هاني عزيز", "توماس ايمن سامي سمير", "إبراهيم مجدي خلف", "كاراس كيرلس ناجح لمعي", "كيرمينا مينا عبدالملاك عياد", "mارينا عماد جابر", "عاطف عادل جابر عبدالمسيح", "كاراس نادي ملاك راغب", "توماس ملاك فرج عبدالسيد", "توماس ميلاد عبدالله ايليا", "قسطور تقي سمير عبد", "ديفيد صبحي جادالله ميخائيل", "فلتاؤوس خلف جابر", "كرستين ملاك سمير", "mاثيو يوسف جرجس حنضل", "يوسف شحاته حنا يوسف", "يوسف ميلاد يونان عبيد"],
-                "ثانية بحري": ["استيفن ناشد توفيق ناشد", "ايفلينا عزت فرج نوار", "جويس رضا كامل عبد السيد", "فلتاؤوس ابراهيم سامي كامل", "fيولا يوسف fايز لبيب", "مينا غطاس سلامة رزق", "استيفن هاني جورج يني", "انطوني مينا بشري غبريال", "ايريني يحيي سامي كامل", "جرجس بطرس جابر ذكي", "سمعان مينا سامي جرجس", "كيرلس مجدي اسحق شحاته", "mارفن صليب سمير بطرس", "قسطور نزيه عريان حبيب", "بولا جميل ملاك متري", "mريم فرج بشري قيصر", "mاريو غطاس نادى", "اماني مينا شحاته", "جوسيانا عماد عيد رمزي", "يوستينا بشارة محروس", "جومانا رضا جابر ذكي", "kيرلس ميلاد غبريال", "مريم نادر زاهي توفيق", "mهرائيل ملاك عزيز رشيد", "يوسف نادر زاهي توفيق"]
+                "ثانية قبلي (أبو سيفين)": ["بيشوي رضا عبد الله", "كيرلس بشير بشري", "نظير اشرف نجيب عبد الله", "بتول عطا عبد حبيب", "بيشوي رزق مسعود", "سامي فادي كامل", "فلومينا اسحاق لبيب", "فيرينا ميلاد جرجس", "كيرلس هاني جرجس", "ملك جرجس رزق ذكي", "ميرولا مينا بشري", "مينا اشرف جابر اسحق", "بيتر عاطف عياد جابر", "صموئيل محروس صليب مقار", "مايفن بيشوي ناجح غطس", "فيرونيكا نادي صافي عبد", "قسطور عيد عبد السيد", "مينا حنا زاهي", "يوسف هاني عيد", "توماس هاني نمر", "جلسيكا مجدي حنا عياد", "فيرونيا جرجس نخلة ايليا", "فيلومينا ميلاد سمير", "يويف شحاته يوسف", "بولا صليب ناجح", "سيمون هاني سمير", "عاطف عادل", "فيرونيا جرجس فايزا", "محبه ملاك يوسف عبد الملاك", "ارميا كيرلس سامي", "مهرائيل مبارك حنا عياد"],
+                "ثانية وسط بحري": ["روفانا مينا ميلادناجي جابر", "صوفيا شنودة ملاك راشد", "كيرلس امير زاهي وهيب", "ماري مينا عطيه بولس", "مارينا مينا عطيه بولس", "مريم عزيز جعفر", "مريم عماد فايز نخلة", "انسطسيا ميلاد ناجي جابر", "جونير كيرلس سامي حكيم", "حنان مينا حنا عياد", "شنودة هاني حبيب توفيق", "كاراس مينا صلاح حنين", "مارفن مدحت بطرس اديب", "ميرا كمال شكري", "استيفن كيرلس بشري عبد الملاك", "انطونيوس جرجس عيد اسحاق", "ايريني بطرس جورجي زكري", "فلتاؤوس خلف جابر كامل", "كرستين ملاك سمير عبد", "اباتوب مينا خلف بشري", "دانيال خلف يوسف", "فيلومينا اسكندر صبحي لبيب", "يوستينا يوسف مينا ونيس", "جورج كيرلس غطس توفيق", "مينا صبحي اديب", "ثيؤدورا امجد ميخائيل", "ميرا كيرلس لطفي رزق"],
+                "ثانية وسط قبلي (الشهيد كرياكوس)": ["افرايم مرقص عادل", "بولا حنا خلف شنودة", "نوفير ايمن صبحي فهيم", "توماس ملاك الهم شحاته", "جاسيكا صموئيل خلف نصيف", "جورج ميلاد عماد سمعان", "جونير هاني اديب رمزي", "دولاجيشنوده حبيب", "فلتاؤوس صموئيل صليب سمعان", "فيلومينا ميلاد وليم موسي", "كيرلس كمال عريان نوار", "مريم عزيز صليب سمعان", "مينا عماد قاعود عياد", "يوستينا شنودا بشري", "انجيلينا كمال عادل بطرس", "انسطلسيا امير عياد لمعي", "بطرس متي هاني عزيز", "توماس ايمن سامي سمير", "إبراهيم مجدي خلف", "كاراس كيرلس ناجح لمعي", "كيرمينا مينا عبدالملاك عياد", "مارينا عماد جابر", "عاطف عادل جابر عبدالمسيح", "كاراس نادي ملاك راغب", "توماس ملاك فرج عبدالسيد", "توماس ميلاد عبدالله ايليا", "قسطور تقي سمير عبد", "ديفيد صبحي جادالله ميخائيل", "فلتاؤوس خلف جابر", "كرستين ملاك سمير", "ماثيو يوسف جرجس حنضل", "يوسف شحاته حنا يوسف", "يوسف ميلاد يونان عبيد"],
+                "ثانية بحري": ["استيفن ناشد توفيق ناشد", "ايفلينا عزت فرج نوار", "جويس رضا كامل عبد السيد", "فلتاؤوس ابراهيم سامي كامل", "فيولا يوسف فايز لبيب", "مينا غطاس سلامة رزق", "استيفن هاني جورج يني", "انطوني مينا بشري غبريال", "ايريني يحيي سامي كامل", "جرجس بطرس جابر ذكي", "سمعان مينا سامي جرجس", "كيرلس مجدي اسحق شحاته", "مارفن صليب سمير بطرس", "قسطور نزيه عريان حبيب", "بولا جميل ملاك متري", "مريم فرج بشري قيصر", "ماريو غطاس نادى", "اماني مينا شحاته", "جوسيانا عماد عيد رمزي", "يوستينا بشارة محروس", "جومانا رضا جابر ذكي", "كيرلس ميلاد غبريال", "مريم نادر زاهي توفيق", "مهرائيل ملاك عزيز رشيد", "يوسف نادر زاهي توفيق"]
             },
             3: {
-                "ثالثة قبلي 2": ["ايرينى جرجس رافت", "بسنت امير زاهي", "مريم أشرف عياد", "مريم فايز مجلى", "جوانا فرح ميلاد", "صموئيل روماني ناجح", "fيرينا سامح عيد ذهني", "كيرمينا فرج رزق", "مريم مرقص سامي", "انجيلينا رضا عياد", "انطونيوس مينا فخري حكيم", "سارة فرج حنا", "كيرمينا ادهم عيد رشيد", "افانيا امير عيد", "لاميس غطاس خلف", "مايفن مدحت رؤوف", "ملاك اسامه يعقوب", "ملك صموئيل صبحي", "جورج فرح عبد المسيح", "كيرلس مرقص ملاك", "kيرلس يحيي بشري", "جوماتة غطاس عياد", "كرياكوس مينا محروس", "يوسف توفيق غطاس", "قسطور عبد جابر", "ايريني ماري فايز"],
-                "ثالثة بحري (أبونا فلتاؤوس)": ["بولا ماجد وليم موسي", "توماس نادي موريس ذكي", "اباسخيرون هاني سلامه عزيز", "ابرام كيرلس عادل نوار", "جومانه سامح شكري عزيز", "كاراس سعد جرجس سعد", "كاراس سعيد جادالله", "كارمينا سعيد جاد الله", "كيرلس توفيق عزيز توفيق", "هدرا محروس سمير ويس", "يؤانا نادي ممدوح سمير", "ايريني ذكي فرج ذكي", "ايريني ملاك عبد السيد فرج", "ثاؤفيلس مدحت قليني بولس", "شنودة رزق ناجي لبيب", "كاراس مينا ابراهيم عزيز", "mريم متي ملاك سمعان", "يؤانا مرزوق محروس", "مينا متري ملاك عبد السيد", "اباتوب نادي ممدوح سمير", "صموئيل رزق كامل عبد السيد", "fيلوباتير هاني عادل"],
-                "ثالثة وسط 1 (البابا كيرلس)": ["استيفن عيد دققش عياد", "كيرمينا عزت عزيز حبيب", "mاروسكا اسحق جابر", "mايفن شحاته يوسف", "mيرولا هني ناجح حبيب", "نسرين شنودة صمؤئيل جرجس", "ترفينا اشرف محروس مجلي", "جومانه مينا هارون", "شنودة متي هاني عزيز", "fيرينا مرقس نادي عبد", "فيلومينا سامي غبريال", "mارينا مينا ملاك عبد المسيح", "مريم رضا وليم حنين", "مريم عاطف كامل ذكي", "mهرائيل عاطف كامل ذكي", "مريم زكريا عطيه موسي", "يوستينا مرقس شحاته تامر", "يوسف نمر سمير بطرس", "برباره مدحت عيد نصيف", "بيشوي رضا وليم حنين", "fيلوباتير مؤمن ابر ذكي", "فلوباتير هانى عادل", "توماس بدار سمير", "طوني شنودة كساب راغب"],
-                "ثالثة قبلي (أبو سيفين)": ["ميرولا منير نجيب", "يؤانا شنودة عياد", "ايلاريا سامي رزق", "mاجي رفعت حنا ابو زيد", "يوسف فادي كامل", "يوسف ميلاد رزق", "ادم وجيه كامل ذكي", "باسم يوسف قاعود", "توماس بطرس حنا", "توماس ميلاد دانيال", "روفانا هاني عبد المسيح", "شنودة متي ثابت", "كاراس وليد عيد", "كيرلس وليد عيد", "mارينا حنا عبد السيد", "يؤانا مكرم كامل", "ايريني عاطف مرزوق", "مينا ماهر كامل", "اباتوب نادى ممدوح", "ادم يوسف", "كيفن رضا ظريف", "mحروس حنا صليب", "ادم مينا نمر", "mادونا ماجد يوسف", "mارينا عبيد جاد الله", "بولا ايليا نبيل", "طونى شنوده كساب", "fيلومينا مجدى عبد", "كيرمينا مجدى عبد", "لميس غطاس خلف"]
+                "ثالثة قبلي 2": ["ايرينى جرجس رافت", "بسنت امير زاهي", "مريم أشرف عياد", "مريم فايز مجلى", "جوانا فرح ميلاد", "صموئيل روماني ناجح", "فيرينا سامح عيد ذهني", "كيرمينا فرج رزق", "مريم مرقص سامي", "انجيلينا رضا عياد", "انطونيوس مينا فخري حكيم", "سارة فرج حنا", "كيرمينا ادهم عيد رشيد", "افانيا امير عيد", "لاميس غطاس خلف", "مايفن مدحت رؤوف", "ملاك اسامه يعقوب", "ملك صموئيل صبحي", "جورج فرح عبد المسيح", "كيرلس مرقص ملاك", "كيرلس يحيي بشري", "جوماتة غطاس عياد", "كرياكوس مينا محروس", "يوسف توفيق غطاس", "قسطور عبد جابر", "ايريني ماري فايز"],
+                "ثالثة بحري (أبونا فلتاؤوس)": ["بولا ماجد وليم موسي", "توماس نادي موريس ذكي", "اباسخيرون هاني سلامه عزيز", "ابرام كيرلس عادل نوار", "جومانه سامح شكري عزيز", "كاراس سعد جرجس سعد", "كاراس سعيد جادالله", "كارمينا سعيد جاد الله", "كيرلس توفيق عزيز توفيق", "هدرا محروس سمير ويس", "يؤانا نادي ممدوح سمير", "ايريني ذكي فرج ذكي", "ايريني ملاك عبد السيد فرج", "ثاؤفيلس مدحت قليني بولس", "شنودة رزق ناجي لبيب", "كاراس مينا ابراهيم عزيز", "مريم متي ملاك سمعان", "يؤانا مرزوق محروس", "مينا متري ملاك عبد السيد", "اباتوب نادي ممدوح سمير", "صموئيل رزق كامل عبد السيد", "فيلوباتير هاني عادل"],
+                "ثالثة وسط 1 (البابا كيرلس)": ["استيفن عيد دققش عياد", "كيرمينا عزت عزيز حبيب", "ماروسكا اسحق جابر", "مايفن شحاته يوسف", "ميرولا هني ناجح حبيب", "نسرين شنودة صمؤئيل جرجس", "ترفينا اشرف محروس مجلي", "جومانه مينا هارون", "شنودة متي هاني عزيز", "فيرينا مرقس نادي عبد", "فيلومينا سامي غبريال", "مارينا مينا ملاك عبد المسيح", "مريم رضا وليم حنين", "مريم عاطف كامل ذكي", "مهرائيل عاطف كامل ذكي", "مريم زكريا عطيه موسي", "يوستينا مرقس شحاته تامر", "يوسف نمر سمير بطرس", "برباره مدحت عيد نصيف", "بيشوي رضا وليم حنين", "فيلوباتير مؤمن ابر ذكي", "فلوباتير هانى عادل", "توماس بدار سمير", "طوني شنودة كساب راغب"],
+                "ثالثة قبلي (أبو سيفين)": ["ميرولا منير نجيب", "يؤانا شنودة عياد", "ايلاريا سامي رزق", "ماجي رفعت حنا ابو زيد", "يوسف فادي كامل", "يوسف ميلاد رزق", "ادم وجيه كامل ذكي", "باسم يوسف قاعود", "توماس بطرس حنا", "توماس ميلاد دانيال", "روفانا هاني عبد المسيح", "شنودة متي ثابت", "كاراس وليد عيد", "كيرلس وليد عيد", "مارينا حنا عبد السيد", "يؤانا مكرم كامل", "ايريني عاطف مرزوق", "مينا ماهر كامل", "اباتوب نادى ممدوح", "ادم يوسف", "كيفن رضا ظريف", "محروس حنا صليب", "ادم مينا نمر", "مادونا ماجد يوسف", "مارينا عبيد جاد الله", "بولا ايليا نبيل", "طونى شنوده كساب", "فيلومينا مجدى عبد", "كيرمينا مجدى عبد", "لميس غطاس خلف"]
             }
         };
 
-        const servantsDatabase = ["امل رؤوف", "هيام ثابت رومان", "مارينا عياد حنا", "ميرنا حبيب رمزي", "ناريمان صليب عزيز", "جاسيكا رضوان رؤوف", "ايمان مجدي ملاك", "ميرنا مجدي ملاك", "انجي رضوان رؤوف", "رانيا عريان اسحاق", "نفين فواد وهيب", "ام توماس ميلاد دميان", "دميانه زكريا عطيه", "مهرائيل جرجس عبدالملك", "نرمين فرح بشري", "mاريان وجيه يوسف", "ليديا مجدي حبيب", "سوسنا وجيه دقش", "سيمون فخري حكيم", "سهير عيد دقش", "mرفت مجدي اسحق", "ايمان نادي نعيم", "ساندى أشرف محروس", "بسنت بطرس امبارك", "اميره محفوظ نبيل", "mرفت مكرم حنين", "رانيا منير مترى", "اميره محفوظ نجيب", "جولبت نصر لبيب", "شرين هانى", "ساميه غبريال اسحاق", "mيرنا عط", "هناء بشرى", "مينا عماد", "جيسيكا يونان جاد", "توماس مني ذهني", "مارجريت عماد مرقس", "mريم عادل ناجح", "mارينا ميلاد تواضروس", "نورا سيد حبيب", "mادلين سامي عزيز", "mريم جميل راغب", "استير سمير", "انجي حنا منير", "يوستينا ميلاد عزيز", "رانيا (ام فيلوباتير مؤمن)", "ناردين عيد عطيه", "الفت سيد حبيب", "ريوندا هاني حليم", "اوليفيا بطرس امبارك", "فيبي عماد تواضروس", "نورا سامي كامل", "ميس سناء(ام جرجس)", "mهرائيل فريد وليم", "نانسى عياد", "ليديا عيد عطية", "روفانا بطرس جورجي", "روفينا صليب عزيز", "سارة بطرس امبارك", "سيمون عبد العزيز", "مريم عماد صالح", "اريني ميلاد زكري", "مهرائيل ملاك يوسف", "يوستينا صموئيل"];
+        const servantsDatabase = ["امل رؤوف", "هيام ثابت رومان", "مارينا عياد حنا", "ميرنا حبيب رمزي", "ناريمان صليب عزيز", "جاسيكا رضوان رؤوف", "ايمان مجدي ملاك", "ميرنا مجدي ملاك", "انجي رضوان رؤوف", "رانيا عريان اسحاق", "نفين فواد وهيب", "ام توماس ميلاد دميان", "دميانه زكريا عطيه", "مهرائيل جرجس عبدالملك", "نرمين فرح بشري", "ماريان وجيه يوسف", "ليديا مجدي حبيب", "سوسنا وجيه دقش", "سيمون فخري حكيم", "سهير عيد دقش", "مرفت مجدي اسحق", "ايمان نادي نعيم", "ساندى أشرف محروس", "بسنت بطرس امبارك", "اميره محفوظ نبيل", "مرفت مكرم حنين", "رانيا منير مترى", "اميره محفوظ نجيب", "جولبت نصر لبيب", "شرين هانى", "ساميه غبريال اسحاق", "ميرنا عط", "هناء بشرى", "مينا عماد", "جيسيكا يونان جاد", "توماس مني ذهني", "مارجريت عماد مرقس", "مريم عادل ناجح", "مارينا ميلاد تواضروس", "نورا سيد حبيب", "مادلين سامي عزيز", "مريم جميل راغب", "استير سمير", "انجي حنا منير", "يوستينا ميلاد عزيز", "رانيا (ام فيلوباتير مؤمن)", "ناردين عيد عطيه", "الفت سيد حبيب", "ريوندا هاني حليم", "اوليفيا بطرس امبارك", "فيبي عماد تواضروس", "نورا سامي كامل", "ميس سناء(ام جرجس)", "مهرائيل فريد وليم", "نانسى عياد", "ليديا عيد عطية", "روفانا بطرس جورجي", "روفينا صليب عزيز", "سارة بطرس امبارك", "سيمون عبد العزيز", "مريم عماد صالح", "اريني ميلاد زكري", "مهرائيل ملاك يوسف", "يوستينا صموئيل"];
 
         let localAttendanceState = { children: {}, servants: {}, currentServantWeek: 1 };
 
-        function loadFromLocalStorage() {
-            const savedData = localStorage.getItem('JexoraSystem_Backup_Data');
-            if (savedData) {
-                try {
-                    localAttendanceState = JSON.parse(savedData);
-                } catch (e) {
-                    console.error("خطأ أثناء تحميل البيانات الاحتياطية", e);
+        // جلب البيانات من المستودع السحابي المشترك
+        async function fetchFromCloud() {
+            try {
+                const response = await fetch(CLOUD_STORAGE_URL);
+                const data = await response.json();
+                if (data) {
+                    localAttendanceState = data;
+                    if(!localAttendanceState.children) localAttendanceState.children = {};
+                    if(!localAttendanceState.servants) localAttendanceState.servants = {};
+                    if(!localAttendanceState.currentServantWeek) localAttendanceState.currentServantWeek = 1;
                 }
+                showInitialScreen();
+            } catch (e) {
+                console.error("خطأ أثناء جلب البيانات السحابية:", e);
+                showToast("❌ فشل الاتصال بالسحابة المباشرة!", false);
             }
         }
 
-        function saveToLocalStorage() {
-            localStorage.setItem('JexoraSystem_Backup_Data', JSON.stringify(localAttendanceState));
+        // حفظ البيانات في المستودع السحابي
+        async function saveToCloud() {
+            showToast("⏳ جاري حفظ التعديلات سحابياً...", true);
+            try {
+                const response = await fetch(CLOUD_STORAGE_URL, {
+                    method: 'POST', // خدمة npoint تستخدم POST لتعديل البيانات
+                    body: JSON.stringify(localAttendanceState),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                if(response.ok) {
+                    showToast("💾 تم الحفظ السحابي بنجاح! الآن يمكن لأي خادم رؤية تعديلاتكِ", true);
+                } else {
+                    throw new Error("فشل الحفظ");
+                }
+            } catch (error) {
+                console.error(error);
+                showToast("❌ حدث خطأ أثناء الحفظ المشترك!", false);
+            }
         }
 
-        function showToast(message) {
+        function showToast(message, isSuccess = true) {
             const toast = document.getElementById('chicToast');
+            const icon = document.getElementById('toastIcon');
             document.getElementById('toastMessage').innerText = message;
-            toast.classList.add('toast-active');
-            setTimeout(() => toast.classList.remove('toast-active'), 3500);
+            
+            if(isSuccess) {
+                icon.innerText = "✓";
+                icon.className = "bg-emerald-500 text-slate-900 rounded-full w-6 h-6 flex items-center justify-center font-bold text-sm";
+            } else {
+                icon.innerText = "✕";
+                icon.className = "bg-rose-500 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold text-sm";
+            }
+            
+            toast.className = "fixed bg-slate-900/95 backdrop-blur-sm text-white px-6 py-3.5 rounded-full shadow-2xl flex items-center gap-3 transition-all duration-500 ease-out z-50 min-w-[280px] justify-center toast-active";
+            setTimeout(() => toast.classList.remove('toast-active'), 4000);
+        }
+
+        function showInitialScreen() {
+            document.getElementById('mainContainer').innerHTML = `
+                <div class="flex flex-col items-center justify-center h-full text-slate-400 mt-20 text-center px-4">
+                    <span class="text-5xl mb-4 animate-bounce">⛪</span>
+                    <p class="text-base md:text-xl font-bold text-slate-700">تم تحميل البيانات المشتركة بنجاح! الرجاء اختيار أحد الصفوف للبدء</p>
+                </div>`;
         }
 
         function showGradeClasses(gradeNum) {
@@ -187,13 +231,12 @@
                 </div>`;
         }
 
-        // حساب الإجمالي: عبارة عن عدد الخانات التي تحتوي على أرقام (عدد الكروت)
         function calculateChildTotalCardsCount(className, childName) {
             let totalCards = 0;
             if (localAttendanceState.children[className] && localAttendanceState.children[className][childName]) {
                 localAttendanceState.children[className][childName].forEach(val => {
                     if (val !== null && val !== "" && !isNaN(val)) {
-                        totalCards++;
+                        totalCards += Number(val);
                     }
                 });
             }
@@ -256,10 +299,10 @@
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-slate-100 pb-4">
                     <div>
                         <h2 class="text-lg md:text-2xl font-black text-slate-800">${className}</h2>
-                        <p class="text-xs text-indigo-600 mt-1 font-bold">✨ نظام كروت الأطفال المطور (14 أسبوعاً شامل عدد الكروت وتثبيت التخزين)</p>
+                        <p class="text-xs text-indigo-600 mt-1 font-bold">✨ نظام الحفظ السحابي المشترك (اضغط حفظ عند الانتهاء لتحديث بيانات الجميع)</p>
                     </div>
                     <div class="grid grid-cols-2 gap-2 w-full md:w-auto">
-                        <button onclick="saveChangesNotification()" class="px-4 py-2.5 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 shadow-sm transition text-xs md:text-sm">💾 حفظ</button>
+                        <button onclick="saveToCloud()" class="px-4 py-2.5 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 shadow-sm transition text-xs md:text-sm">💾 حفظ للكل</button>
                         <button onclick="exportChildrenToExcel('${className}', ${gradeNum})" class="px-4 py-2.5 bg-slate-800 text-white font-bold rounded-xl hover:bg-slate-900 shadow-sm transition text-xs md:text-sm">📊 إكسيل</button>
                     </div>
                 </div>
@@ -269,7 +312,6 @@
         function calculateServantTotalPercentage(name) {
             let totalPoints = 0;
             const fields = ['qoddas', 'attendance', 'commitment', 'prep', 'followUp'];
-            
             for (let w = 1; w <= 8; w++) {
                 if (localAttendanceState.servants[name]?.[w]) {
                     fields.forEach(field => {
@@ -279,8 +321,29 @@
                     });
                 }
             }
-            let percent = totalPoints * 2.5; 
-            return Math.round(percent * 10) / 10;
+            return Math.round((totalPoints * 2.5) * 10) / 10;
+        }
+
+        function updateServantField(name, field, value) {
+            const currentWeek = localAttendanceState.currentServantWeek;
+            if (!localAttendanceState.servants[name]) localAttendanceState.servants[name] = {};
+            if (!localAttendanceState.servants[name][currentWeek]) {
+                localAttendanceState.servants[name][currentWeek] = { qoddas: false, attendance: false, commitment: false, prep: false, followUp: false };
+            }
+            localAttendanceState.servants[name][currentWeek][field] = value;
+            
+            const index = servantsDatabase.indexOf(name);
+            if (index !== -1) {
+                const percentCell = document.getElementById(`percent-${index}`);
+                if (percentCell) {
+                    percentCell.innerText = `${calculateServantTotalPercentage(name)}%`;
+                }
+            }
+        }
+
+        function changeServantWeek(weekNum) {
+            localAttendanceState.currentServantWeek = Number(weekNum);
+            showServantsSection();
         }
 
         function showServantsSection() {
@@ -290,65 +353,52 @@
 
             let weekOptions = '';
             for(let i=1; i<=8; i++) {
-                weekOptions += `<option value="${i}" ${currentWeek === i ? 'selected' : ''}>الأسبوع ${i} (من 8)</option>`;
+                weekOptions += `<option value="${i}" ${currentWeek === i ? 'selected' : ''}>الأسبوع ${i}</option>`;
             }
 
             let tableRows = servantsDatabase.map((name, index) => {
-                if (!localAttendanceState.servants[name]) {
-                    localAttendanceState.servants[name] = {};
-                }
+                if (!localAttendanceState.servants[name]) localAttendanceState.servants[name] = {};
                 if (!localAttendanceState.servants[name][currentWeek]) {
                     localAttendanceState.servants[name][currentWeek] = { qoddas: false, attendance: false, commitment: false, prep: false, followUp: false };
                 }
-                
                 let data = localAttendanceState.servants[name][currentWeek];
                 let currentTotalPercent = calculateServantTotalPercentage(name);
-                let percentColor = currentTotalPercent >= 80 ? 'text-emerald-600 bg-emerald-50' : currentTotalPercent >= 50 ? 'text-amber-600 bg-amber-50' : 'text-slate-400 bg-slate-50';
 
                 return `
                     <tr class="border-b border-slate-100 hover:bg-slate-50/50 transition">
                         <td class="px-1 py-3 text-center font-bold text-slate-400 border border-slate-200 text-xs">${index + 1}</td>
-                        <td class="px-2 py-3 text-right font-bold text-slate-800 border border-slate-200 sticky right-0 bg-white z-10 text-xs md:text-sm min-w-[130px] shadow-[2px_0_5px_rgba(0,0,0,0.03)]">${name}</td>
-                        
+                        <td class="px-2 py-3 text-right font-bold text-slate-800 border border-slate-200 sticky right-0 bg-white z-10 text-xs md:text-sm min-w-[130px]">${name}</td>
                         <td class="p-1 text-center border border-slate-200"><input type="checkbox" ${data.qoddas ? 'checked' : ''} onchange="updateServantField('${name}', 'qoddas', this.checked)" class="round-checkbox"></td>
                         <td class="p-1 text-center border border-slate-200"><input type="checkbox" ${data.attendance ? 'checked' : ''} onchange="updateServantField('${name}', 'attendance', this.checked)" class="round-checkbox"></td>
                         <td class="p-1 text-center border border-slate-200"><input type="checkbox" ${data.commitment ? 'checked' : ''} onchange="updateServantField('${name}', 'commitment', this.checked)" class="round-checkbox"></td>
                         <td class="p-1 text-center border border-slate-200"><input type="checkbox" ${data.prep ? 'checked' : ''} onchange="updateServantField('${name}', 'prep', this.checked)" class="round-checkbox"></td>
                         <td class="p-1 text-center border border-slate-200"><input type="checkbox" ${data.followUp ? 'checked' : ''} onchange="updateServantField('${name}', 'followUp', this.checked)" class="round-checkbox"></td>
-                        
-                        <td class="p-1 text-center border border-slate-200 font-black text-xs md:text-sm ${percentColor}" id="percent-${index}">
-                            ${currentTotalPercent}%
-                        </td>
+                        <td class="p-1 text-center border border-slate-200 font-black text-xs md:text-sm" id="percent-${index}">${currentTotalPercent}%</td>
                     </tr>`;
             }).join('');
 
             container.innerHTML = `
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-slate-100 pb-4">
-                    <div>
-                        <h2 class="text-lg md:text-2xl font-black text-rose-600 flex items-center gap-2">🕊️ تقييم الخدام التراكمي المئوي (8 أسابيع)</h2>
-                        <p class="text-xs text-slate-500 mt-1 font-semibold">المدة الكلية: 8 أسابيع | النسبة المئوية تحسب تلقائياً وبدقة فور التعديل ✨</p>
-                    </div>
+                    <h2 class="text-lg md:text-2xl font-black text-rose-600">🕊️ تقييم الخدام التراكمي المشترك</h2>
                     <div class="flex items-center gap-2 w-full md:w-auto">
-                        <select onchange="changeServantWeek(this.value)" class="p-2.5 bg-rose-50 border border-rose-200 text-rose-700 font-bold rounded-xl text-xs md:text-sm focus:outline-none">
+                        <select onchange="changeServantWeek(this.value)" class="p-2.5 bg-rose-50 border border-rose-200 text-rose-700 font-bold rounded-xl text-xs">
                             ${weekOptions}
                         </select>
-                        <button onclick="saveChangesNotification()" class="px-4 py-2.5 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 shadow-sm text-xs md:text-sm">💾 حفظ</button>
-                        <button onclick="exportServantsToExcel()" class="px-4 py-2.5 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 shadow-sm text-xs md:text-sm">📊 إكسيل</button>
+                        <button onclick="saveToCloud()" class="px-4 py-2.5 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 shadow-sm text-xs md:text-sm">💾 حفظ للكل</button>
                     </div>
                 </div>
-
                 <div class="table-responsive border border-slate-200 rounded-2xl max-h-[480px]">
                     <table class="w-full text-right border-collapse table-fixed">
                         <thead>
-                            <tr class="bg-rose-50 text-slate-700 text-xs md:text-sm sticky top-0 z-20">
-                                <th class="px-1 py-3 text-center w-10 border border-slate-200 bg-rose-50 font-bold">م</th>
-                                <th class="px-2 py-3 text-right w-36 border border-slate-200 bg-rose-50 sticky right-0 z-30 font-bold shadow-[2px_0_5px_rgba(0,0,0,0.03)]">الاسم</th>
-                                <th class="px-1 py-3 text-center border border-slate-200 bg-rose-50 font-bold min-w-[55px]">قداس</th>
-                                <th class="px-1 py-3 text-center border border-slate-200 bg-rose-50 font-bold min-w-[55px]">حضور</th>
-                                <th class="px-1 py-3 text-center border border-slate-200 bg-rose-50 font-bold min-w-[55px]">التزام</th>
-                                <th class="px-1 py-3 text-center border border-slate-200 bg-rose-50 font-bold min-w-[55px]">تحضير</th>
-                                <th class="px-1 py-3 text-center border border-slate-200 bg-rose-50 font-bold min-w-[55px]">افتقاد</th>
-                                <th class="px-1 py-3 text-center border border-slate-200 bg-rose-50 font-bold min-w-[75px]">الإجمالي %</th>
+                            <tr class="bg-rose-50 text-slate-700 text-xs sticky top-0 z-20">
+                                <th class="w-10 border border-slate-200 bg-rose-50">م</th>
+                                <th class="w-36 border border-slate-200 bg-rose-50 sticky right-0 z-30">الاسم</th>
+                                <th class="border border-slate-200 bg-rose-50">قداس</th>
+                                <th class="border border-slate-200 bg-rose-50">حضور</th>
+                                <th class="border border-slate-200 bg-rose-50">التزام</th>
+                                <th class="border border-slate-200 bg-rose-50">تحضير</th>
+                                <th class="border border-slate-200 bg-rose-50">افتقاد</th>
+                                <th class="border border-slate-200 bg-rose-50">النسبة</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -358,177 +408,73 @@
                 </div>`;
         }
 
-        function updateServantField(name, field, value) {
-            const currentWeek = localAttendanceState.currentServantWeek;
-            localAttendanceState.servants[name][currentWeek][field] = value;
-            
-            const index = servantsDatabase.indexOf(name);
-            const percentCell = document.getElementById(`percent-${index}`);
-            if (percentCell) {
-                let newPercent = calculateServantTotalPercentage(name);
-                percentCell.innerText = `${newPercent}%`;
-                percentCell.className = `p-1 text-center border border-slate-200 font-black text-xs md:text-sm ${newPercent >= 80 ? 'text-emerald-600 bg-emerald-50' : newPercent >= 50 ? 'text-amber-600 bg-amber-50' : 'text-slate-400 bg-slate-50'}`;
-            }
-        }
-
-        function changeServantWeek(weekNum) {
-            localAttendanceState.currentServantWeek = parseInt(weekNum);
-            showServantsSection();
-        }
-
-        function saveChangesNotification() {
-            saveToLocalStorage();
-            showToast("💾 تم تثبيت وحفظ كافة التعديلات في ذاكرة الجهاز الآمنة بنجاح!");
-        }
-
-        // تصدير الأطفال لملف Excel المطور
         async function exportChildrenToExcel(className, gradeNum) {
-            try {
-                // تصفية اسم الشيت ليكون أنيقاً تماماً
-                // أولاً نأخذ اسم الكلاس وننظفه من الأقواس الغريبة والرموز إذا وجدت، ونحدد عدد الحروف ليتناسب مع قيود Excel (31 حرفاً كحد أقصى)
-                let cleanSheetName = className.trim().replace(/[\[\]\*\?\:\/\\]/g, "");
-                if (cleanSheetName.length > 31) {
-                    cleanSheetName = cleanSheetName.substring(0, 31);
-                }
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet(className, {views: [{showGridLines: true, rtl: true}]});
+            
+            const headers = ['م', 'اسم الطفل'];
+            for(let w=1; w<=14; w++) {
+                headers.push(`أسبوع ${w}`);
+            }
+            headers.push('إجمالي الكروت');
 
-                const workbook = new ExcelJS.Workbook();
-                const worksheet = workbook.addWorksheet(cleanSheetName, { views: [{ rtl: true, showGridLines: true }] });
+            const headerRow = worksheet.addRow(headers);
+            headerRow.height = 30;
+            headerRow.eachCell((cell) => {
+                cell.font = { name: 'Segoe UI', bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4F46E5' } }; 
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                cell.border = {
+                    top: {style:'thin', color: {argb:'FFD1D5DB'}},
+                    left: {style:'thin', color: {argb:'FFD1D5DB'}},
+                    bottom: {style:'thin', color: {argb:'FFD1D5DB'}},
+                    right: {style:'thin', color: {argb:'FFD1D5DB'}}
+                };
+            });
 
-                let cols = [
-                    { header: 'م', key: 'id', width: 8 }, 
-                    { header: 'اسم الطفل', key: 'name', width: 35 }
-                ];
-                for(let w=1; w<=14; w++) {
-                    cols.push({ header: `أسبوع ${w}`, key: `w${w}`, width: 12 });
-                }
-                cols.push({ header: 'إجمالي الكروت', key: 'total_score', width: 16 });
+            const students = megaDatabase[gradeNum][className];
+            students.forEach((name, index) => {
+                const rowData = [index + 1, name];
+                const studentData = localAttendanceState.children[className]?.[name] || Array(14).fill("");
                 
-                worksheet.columns = cols;
-
-                worksheet.insertRow(1, []);
-                worksheet.mergeCells('A1:P1');
-                const mainTitle = worksheet.getCell('A1');
-                mainTitle.value = `كشف درجات وأسابيع الأطفال: ${className}`;
-                mainTitle.font = { name: 'Segoe UI', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
-                mainTitle.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E3A8A' } };
-                mainTitle.alignment = { vertical: 'middle', horizontal: 'center' };
-                worksheet.getRow(1).height = 35;
-
-                const headerRow = worksheet.getRow(3);
-                headerRow.height = 26;
-                headerRow.eachCell((cell, colNum) => {
-                    cell.font = { name: 'Segoe UI', bold: true, color: { argb: 'FFFFFFFF' } };
-                    if(colNum === 17) {
-                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF10B981' } };
-                    } else {
-                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF3B82F6' } };
-                    }
-                    cell.alignment = { vertical: 'middle', horizontal: 'center' };
-                    cell.border = { top: { style: 'thin', color: { argb: 'FFCBD5E1' } }, left: { style: 'thin', color: { argb: 'FFCBD5E1' } }, bottom: { style: 'thin', color: { argb: 'FFCBD5E1' } }, right: { style: 'thin', color: { argb: 'FFCBD5E1' } } };
-                });
-
-                const students = megaDatabase[gradeNum][className];
-                students.forEach((name, index) => {
-                    let rowData = { id: index + 1, name: name };
-                    let userWeeks = localAttendanceState.children[className]?.[name] || Array(14).fill("");
+                for(let w=0; w<14; w++) {
+                    rowData.push(studentData[w] !== "" ? Number(studentData[w]) : "");
+                }
+                
+                rowData.push(calculateChildTotalCardsCount(className, name));
+                const row = worksheet.addRow(rowData);
+                row.height = 24;
+                row.eachCell((cell, colNumber) => {
+                    cell.font = { name: 'Segoe UI', size: 10 };
+                    cell.alignment = { vertical: 'middle', horizontal: colNumber === 2 ? 'right' : 'center' };
+                    cell.border = {
+                        top: {style:'thin', color: {argb:'FFE5E7EB'}},
+                        left: {style:'thin', color: {argb:'FFE5E7EB'}},
+                        bottom: {style:'thin', color: {argb:'FFE5E7EB'}},
+                        right: {style:'thin', color: {argb:'FFE5E7EB'}}
+                    };
                     
-                    for(let w=0; w<14; w++) {
-                        rowData[`w${w+1}`] = userWeeks[w] !== "" ? Number(userWeeks[w]) : "-";
+                    if(colNumber === 17) {
+                        cell.font = { name: 'Segoe UI', bold: true, size: 10, color: { argb: 'FF1E1B4B' } };
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E7FF' } }; 
                     }
-                    
-                    // إدراج عدد الخانات النشطة (الإجمالي ككروت)
-                    rowData['total_score'] = calculateChildTotalCardsCount(className, name);
-
-                    const row = worksheet.addRow(rowData);
-                    row.height = 22;
-                    row.eachCell((cell, colNumber) => {
-                        cell.alignment = colNumber === 2 ? { vertical: 'middle', horizontal: 'right' } : { vertical: 'middle', horizontal: 'center' };
-                        cell.font = { name: 'Segoe UI', size: 11 };
-                        
-                        if(colNumber === 17) {
-                            cell.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FF047857' } };
-                        }
-                        
-                        cell.border = { top: { style: 'thin', color: { argb: 'FFE2E8F0' } }, left: { style: 'thin', color: { argb: 'FFE2E8F0' } }, bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } }, right: { style: 'thin', color: { argb: 'FFE2E8F0' } } };
-                    });
                 });
+            });
 
-                const buffer = await workbook.xlsx.writeBuffer();
-                saveAs(new Blob([buffer]), `كشف_${cleanSheetName}_14أسبوع.xlsx`);
-                showToast("📊 تم تصدير كشف الأطفال بنجاح باسم الشيت الجديد وحساب عدد الكروت!");
-            } catch (error) {
-                console.error(error);
-                showToast("❌ حدث خطأ أثناء التصدير!");
-            }
+            worksheet.columns.forEach((col, i) => {
+                if (i === 1) { 
+                    col.width = 30;
+                } else if (i === 0 || i === 16) { 
+                    col.width = 15;
+                } else {
+                    col.width = 10;
+                }
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            saveAs(new Blob([buffer]), `${className} - تقرير الكروت المشترك.xlsx`);
+            showToast("📊 تم تصدير ملف الإكسيل بنجاح!", true);
         }
-
-        async function exportServantsToExcel() {
-            try {
-                const workbook = new ExcelJS.Workbook();
-                const worksheet = workbook.addWorksheet('سجل الخدام', { views: [{ rtl: true, showGridLines: true }] });
-
-                worksheet.columns = [
-                    { header: 'م', key: 'id', width: 8 },
-                    { header: 'اسم الخادم', key: 'name', width: 30 },
-                    { header: 'قداس', key: 'qoddas', width: 12 },
-                    { header: 'حضور', key: 'attendance', width: 12 },
-                    { header: 'التزام', key: 'commitment', width: 12 },
-                    { header: 'تحضير', key: 'prep', width: 12 },
-                    { header: 'افتقاد', key: 'followUp', width: 12 },
-                    { header: 'الإجمالي %', key: 'total', width: 15 }
-                ];
-
-                worksheet.insertRow(1, []);
-                worksheet.mergeCells('A1:H1');
-                const mainTitle = worksheet.getCell('A1');
-                mainTitle.value = `تقييم سجل الخدام - الأسبوع الحالي (${localAttendanceState.currentServantWeek})`;
-                mainTitle.font = { name: 'Segoe UI', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
-                mainTitle.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE11D48' } };
-                mainTitle.alignment = { vertical: 'middle', horizontal: 'center' };
-                worksheet.getRow(1).height = 35;
-
-                const headerRow = worksheet.getRow(3);
-                headerRow.height = 26;
-                headerRow.eachCell((cell) => {
-                    cell.font = { name: 'Segoe UI', bold: true, color: { argb: 'FFFFFFFF' } };
-                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF43F5E' } };
-                    cell.alignment = { vertical: 'middle', horizontal: 'center' };
-                });
-
-                servantsDatabase.forEach((name, index) => {
-                    let currentWeek = localAttendanceState.currentServantWeek;
-                    let data = localAttendanceState.servants[name]?.[currentWeek] || { qoddas: false, attendance: false, commitment: false, prep: false, followUp: false };
-                    let totalPercent = calculateServantTotalPercentage(name);
-
-                    const row = worksheet.addRow({
-                        id: index + 1,
-                        name: name,
-                        qoddas: data.qoddas ? '✓' : '-',
-                        attendance: data.attendance ? '✓' : '-',
-                        commitment: data.commitment ? '✓' : '-',
-                        prep: data.prep ? '✓' : '-',
-                        followUp: data.followUp ? '✓' : '-',
-                        total: `${totalPercent}%`
-                    });
-                    row.height = 22;
-                    row.eachCell((cell, colNumber) => {
-                        cell.alignment = colNumber === 2 ? { vertical: 'middle', horizontal: 'right' } : { vertical: 'middle', horizontal: 'center' };
-                        cell.font = { name: 'Segoe UI', size: 11 };
-                    });
-                });
-
-                const buffer = await workbook.xlsx.writeBuffer();
-                saveAs(new Blob([buffer]), `سجل_الخدام_الاسبوع_${localAttendanceState.currentServantWeek}.xlsx`);
-                showToast("📊 تم تصدير سجل الخدام بنجاح!");
-            } catch (error) {
-                console.error(error);
-                showToast("❌ حدث خطأ أثناء التصدير!");
-            }
-        }
-
-        window.onload = function() {
-            loadFromLocalStorage();
-        };
     </script>
 </body>
 </html>
