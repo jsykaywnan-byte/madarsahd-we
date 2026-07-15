@@ -279,7 +279,7 @@
                             <span class="text-[10px] text-slate-400 font-bold">أسبوع ${w+1}</span>
                             <input type="number" 
                                    value="${val}" 
-                                   oninput="updateChildScore('${className}', '${name}', ${w}, this.value)" 
+                                   oninput="updateChildScore('${className}', '${name}', ${w}, this.value); autoSave();"
                                    placeholder="-" 
                                    class="w-10 text-center bg-white border border-slate-300 rounded-lg p-1 text-xs font-black text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all">
                         </div>`;
@@ -344,6 +344,7 @@
                 const percentCell = document.getElementById(`percent-${index}`);
                 if (percentCell) {
                     percentCell.innerText = `${calculateServantTotalPercentage(name)}%`;
+                    autoSave();
                 }
             }
         }
@@ -482,6 +483,36 @@
             saveAs(new Blob([buffer]), `${className} - تقرير الكروت المشترك.xlsx`);
             showToast("📊 تم تصدير ملف الإكسيل بنجاح!", true);
         }
+        // تحديث البيانات تلقائيًا كل 5 ثواني
+setInterval(async () => {
+    try {
+        const response = await fetch(CLOUD_STORAGE_URL);
+        const data = await response.json();
+
+        if (data) {
+            localAttendanceState = data;
+
+            // إعادة رسم الصفحة الحالية لو كانت مفتوحة
+            const title = document.querySelector('#mainContainer h2');
+            if (title) {
+                const currentClass = title.innerText;
+
+                for (const grade in megaDatabase) {
+                    if (megaDatabase[grade][currentClass]) {
+                        renderChildrenClassTable(Number(grade), currentClass);
+                        return;
+                    }
+                }
+
+                if (currentClass.includes('تقييم الخدام')) {
+                    showServantsSection();
+                }
+            }
+        }
+    } catch (e) {
+        console.log('فشل التحديث التلقائي', e);
+    }
+}, 5000);
     </script>
 </body>
 </html>
